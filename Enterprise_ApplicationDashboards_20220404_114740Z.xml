@@ -1,0 +1,1255 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<OneStreamXF version="6.8.1.13230">
+    <applicationDashboardsRoot>
+        <businessRules>
+            <businessRule businessRuleType="DashboardExtender" name="FCP_APP_Selection_Refresh_Metadata">
+                <accessGroup>Everyone</accessGroup>
+                <maintenanceGroup>Everyone</maintenanceGroup>
+                <isGlobal>false</isGlobal>
+                <isEncrypted>false</isEncrypted>
+                <referencedAssemblies />
+                <sourceCode><![CDATA[Imports System
+Imports System.Data
+Imports System.Data.Common
+Imports System.IO
+Imports System.Collections.Generic
+Imports System.Globalization
+Imports System.Linq
+Imports Microsoft.VisualBasic
+Imports System.Windows.Forms
+Imports OneStream.Shared.Common
+Imports OneStream.Shared.Wcf
+Imports OneStream.Shared.Engine
+Imports OneStream.Shared.Database
+Imports OneStream.Stage.Engine
+Imports OneStream.Stage.Database
+Imports OneStream.Finance.Engine
+Imports OneStream.Finance.Database
+
+Namespace OneStream.BusinessRule.DashboardExtender.FCP_APP_Selection_Refresh_Metadata
+	Public Class MainClass
+		Public Function Main(ByVal si As SessionInfo, ByVal globals As BRGlobals, ByVal api As Object, ByVal args As DashboardExtenderArgs) As Object
+			Try
+				
+				Select Case args.FunctionType
+
+					Case Is = DashboardExtenderFunctionType.ComponentSelectionChanged
+						If (args.FunctionName = "SetSelectedApps") Then
+
+							
+							'Dim scenarioTo As String = BRApi.Dashboards.Parameters.GetLiteralParameterValue(si, False, "DBP_ScenarioTo")
+							Dim sValue As String = args.TaskInfo.CustomSubstVars("param_app_list_send_to_fcp")
+							brapi.ErrorLog.LogMessage(si,"selected apps: " & sValue)
+							Brapi.Dashboards.Parameters.SetLiteralParameterValue(si,False,"param_app_list_selected",sValue)
+							
+							If Not String.IsNullOrEmpty(sValue) Then
+								'Create a message
+								Dim message As String = "Updated selected app list"
+								
+								'Save the updated Literal Parameter
+								BRApi.Dashboards.Parameters.SetLiteralParameterValue(si, False, "DBP_ScenarioTo", sValue)						
+								
+								'Set the return value
+								Dim selectionChangedTaskResult As New XFSelectionChangedTaskResult()
+								selectionChangedTaskResult.IsOK = True
+								selectionChangedTaskResult.ShowMessageBox = False
+								selectionChangedTaskResult.Message = message
+								selectionChangedTaskResult.ChangeSelectionChangedUIActionInDashboard = False
+								selectionChangedTaskResult.ModifiedSelectionChangedUIActionInfo = Nothing
+								selectionChangedTaskResult.ChangeSelectionChangedNavigationInDashboard = False
+								selectionChangedTaskResult.ModifiedSelectionChangedNavigationInfo = Nothing
+								selectionChangedTaskResult.ChangeCustomSubstVarsInDashboard = False
+								selectionChangedTaskResult.ModifiedCustomSubstVars = Nothing
+								selectionChangedTaskResult.ChangeCustomSubstVarsInLaunchedDashboard = False
+								selectionChangedTaskResult.ModifiedCustomSubstVarsForLaunchedDashboard = Nothing
+
+								Return selectionChangedTaskResult					
+							End If	
+						Else If (args.FunctionName = "SetSelectedDims") Then
+
+							
+							'Dim scenarioTo As String = BRApi.Dashboards.Parameters.GetLiteralParameterValue(si, False, "DBP_ScenarioTo")
+							Dim sValue As String = args.TaskInfo.CustomSubstVars("param_dim_list_send_to_fcp")
+							brapi.ErrorLog.LogMessage(si,"selected dim: " & sValue)
+							Brapi.Dashboards.Parameters.SetLiteralParameterValue(si,False,"param_dim_list_selected",sValue)
+							
+							If Not String.IsNullOrEmpty(sValue) Then
+								'Create a message
+								Dim message As String = "Updated selected dim list"
+								
+								'Save the updated Literal Parameter
+								BRApi.Dashboards.Parameters.SetLiteralParameterValue(si, False, "DBP_ScenarioTo", sValue)						
+								
+								'Set the return value
+								Dim selectionChangedTaskResult As New XFSelectionChangedTaskResult()
+								selectionChangedTaskResult.IsOK = True
+								selectionChangedTaskResult.ShowMessageBox = False
+								selectionChangedTaskResult.Message = message
+								selectionChangedTaskResult.ChangeSelectionChangedUIActionInDashboard = False
+								selectionChangedTaskResult.ModifiedSelectionChangedUIActionInfo = Nothing
+								selectionChangedTaskResult.ChangeSelectionChangedNavigationInDashboard = False
+								selectionChangedTaskResult.ModifiedSelectionChangedNavigationInfo = Nothing
+								selectionChangedTaskResult.ChangeCustomSubstVarsInDashboard = False
+								selectionChangedTaskResult.ModifiedCustomSubstVars = Nothing
+								selectionChangedTaskResult.ChangeCustomSubstVarsInLaunchedDashboard = False
+								selectionChangedTaskResult.ModifiedCustomSubstVarsForLaunchedDashboard = Nothing
+
+								Return selectionChangedTaskResult					
+							End If			
+							
+						End If
+						
+				End Select
+					
+			
+				If args.FunctionName.XFEqualsIgnoreCase("SendToFCP") Then
+					
+					'GET SELECTED APPLICATIONS
+					Dim sValue As String = BRApi.Dashboards.Parameters.GetLiteralParameterValue(si, False, "param_app_list_send_to_fcp")
+					'Dim sValue As String = args.NameValuePairs.XFGetValue("SelectedValues")
+					brapi.ErrorLog.LogMessage(si,"test apps: " & sValue)
+					
+				End If
+					
+				Return Nothing
+			Catch ex As Exception
+				Throw ErrorHandler.LogWrite(si, New XFException(si, ex))
+			End Try
+		End Function
+	End Class
+End Namespace
+]]></sourceCode>
+            </businessRule>
+            <businessRule businessRuleType="DashboardStringFunction" name="DimensionApplication">
+                <accessGroup>Everyone</accessGroup>
+                <maintenanceGroup>Everyone</maintenanceGroup>
+                <isGlobal>false</isGlobal>
+                <isEncrypted>false</isEncrypted>
+                <referencedAssemblies />
+                <sourceCode><![CDATA[
+
+'
+Imports System
+Imports System.Data
+Imports System.Data.Common
+Imports System.IO
+Imports System.Collections.Generic
+Imports System.Globalization
+Imports System.Linq
+Imports Microsoft.VisualBasic
+Imports System.Windows.Forms
+Imports OneStream.Shared.Common
+Imports OneStream.Shared.Wcf
+Imports OneStream.Shared.Engine
+Imports OneStream.Shared.Database
+Imports OneStream.Stage.Engine
+Imports OneStream.Stage.Database
+Imports OneStream.Finance.Engine
+Imports OneStream.Finance.Database
+
+Namespace OneStream.BusinessRule.DashboardStringFunction.DimensionApplication
+	Public Class MainClass
+		Public Function Main(ByVal si As SessionInfo, ByVal globals As BRGlobals, ByVal api As Object, ByVal args As DashboardStringFunctionArgs) As Object
+			Try
+				
+			  'GetRequestId
+				' Parameter Example:  BRString(ACM_Tools, GetRequestId, ID=|!prm_acm_request_number!|)
+
+				If args.FunctionName.XFEqualsIgnoreCase("GetRequestId") Then	
+					
+				Return si.UserName				
+					
+				Else If args.FunctionName.XFContainsIgnoreCase("GetTextBoxValue") Then
+					Dim xfEnv As New XFEnvironment ()					
+					Dim appAdminInfo As XFApplicationAdminInitInfo = xfEnv.GetApplicationAdminInitInfo(si)
+					Dim appInfoList As List(Of xfApplicationInfo)= appAdminInfo.Applications
+					Dim appList = appInfoList.Select(Function(x) x.Application.Name).ToList()
+
+					Dim str As String = String.Join(", ",appList)
+
+					Return  str
+				Else If args.FunctionName.XFContainsIgnoreCase("UpdateList") Then
+					Dim currentUserName As String = si.AuthToken.UserName
+					Dim userInfo As UserInfo = BRApi.Security.Admin.GetUser(si, currentUserName)
+					Dim email As String = userInfo.User.Email
+					
+					Dim sql As String = $"SELECT DISTINCT Module FROM dbo.XFT_Global_Parameters WHERE Parmname = 'EmailDist' and ParmValue like '%{email}%'"
+							Dim sProcess As String = ""
+							Using dbConn As DbConnInfo = BRApi.Database.CreateApplicationDbConnInfo(si)
+								Dim dt As DataTable = BRApi.Database.ExecuteSql(dbConn, sql, False)
+								For Each dr As DataRow In dt.Rows 
+									sProcess += dr("Module") & ","
+								Next
+							End Using
+							BRAPi.ErrorLog.LogMessage(si, $"{sProcess}")
+							Return sProcess
+					
+				Else If args.FunctionName.XFEqualsIgnoreCase("GetApplicationList") Then
+					Dim xfEnv As New XFEnvironment ()
+					Dim appAdminInfo As XFApplicationAdminInitInfo = xfEnv.GetApplicationAdminInitInfo(si)
+					Dim appInfoList As List(Of xfApplicationInfo)= appAdminInfo.Applications
+					Dim appList As List(Of String) = appInfoList.Select(Function(x) x.Application.Name).ToList()
+					
+					 Dim AppName=Brapi.Dashboards.Parameters.GetLiteralParameterValue(si,False,"param_app_list_selected")
+					 If String.IsNullOrEmpty(AppName) Then
+						 Brapi.Dashboards.Parameters.SetLiteralParameterValue(si,False,"param_app_list_selected",String.Join(",",appList))
+					 End If 
+					Return String.Join(",",appList)		
+					
+				Else If args.FunctionName.XFEqualsIgnoreCase("GetDimensionList") Then
+					Dim currentUserName As String = si.AuthToken.UserName
+					Dim userInfo As UserInfo = BRApi.Security.Admin.GetUser(si, currentUserName)
+					Dim email As String = userInfo.User.Email
+					
+					Dim sql As String = $"SELECT ParmValue FROM dbo.XFT_Global_Parameters WHERE Parmname = 'Names' and Module ='DimensionData'"
+							Dim sProcess As String = ""
+							Using dbConn As DbConnInfo = BRApi.Database.CreateApplicationDbConnInfo(si)
+								Dim dt As DataTable = BRApi.Database.ExecuteSql(dbConn, sql, False)
+								For Each dr As DataRow In dt.Rows 
+									sProcess += dr("ParmValue") & ","
+								Next
+							End Using
+							BRAPi.ErrorLog.LogMessage(si, $"{sProcess}")
+							Return sProcess		
+					
+				Else If args.FunctionName.XFEqualsIgnoreCase("GetScenarioList") Then
+'					Dim currentUserName As String = si.AuthToken.UserName
+'					Dim userInfo As UserInfo = BRApi.Security.Admin.GetUser(si, currentUserName)
+'					Dim email As String = userInfo.User.Email
+					
+					Dim sql As String = $"SELECT DISTINCT Sn FROM dbo.StageSourceData Order by Sn asc"
+							Dim sScenarioList As String = ""
+							Using dbConn As DbConnInfo = BRApi.Database.CreateApplicationDbConnInfo(si)
+								Dim dt As DataTable = BRApi.Database.ExecuteSql(dbConn, sql, False)
+								For Each dr As DataRow In dt.Rows 
+									sScenarioList += dr("Sn") & ","
+								Next
+							End Using
+							BRAPi.ErrorLog.LogMessage(si, $"{sScenarioList}")
+							Return sScenarioList
+							
+				Else If args.FunctionName.XFEqualsIgnoreCase("GetWorkFlowProfileListForFcst") Or args.FunctionName.XFEqualsIgnoreCase("GetWorkFlowProfileListForAct") Then
+					
+					Dim sCubeName As String = ""
+					If args.FunctionName.XFEqualsIgnoreCase("GetWorkFlowProfileListForFcst") Then
+						sCubeName = args.CustomSubstVars.XFGetValue("prm_Select_Fcst_Cube_List")
+					Else
+						sCubeName = args.CustomSubstVars.XFGetValue("prm_Select_Act_Cube_List")
+					End If
+					'BRAPi.ErrorLog.LogMessage(si, $"sCubeName ==>> {sCubeName}")
+					
+					'WHERE CubeName = '"+sCubeName+"'
+					
+					Dim sql As String = $"SELECT distinct profileName FROM dbo.WorkFlowProfileHierarchy WHERE CubeName = '"+sCubeName+"' Order by profileName asc"
+							Dim sWFProfileList As String = ""
+							
+							Dim AppName = Brapi.Dashboards.Parameters.GetLiteralParameterValue(si,False,"prm_LoadFCPData_app_list_selected")
+							Dim newSeshInfo As SessionInfo = BRApi.Security.Authorization.CreateSessionInfoForAnotherApp(si, appName.TrimStart(), openAppResult.Success)
+							
+							Using dbConn As DbConnInfo = BRApi.Database.CreateApplicationDbConnInfo(newSeshInfo)
+								Dim dt As DataTable = BRApi.Database.ExecuteSql(dbConn, sql, False)
+								For Each dr As DataRow In dt.Rows 
+									sWFProfileList += dr("profileName") & ","
+								Next
+							End Using
+							'BRAPi.ErrorLog.LogMessage(si, $"{sWFProfileList}")
+							Return sWFProfileList
+							
+				Else If args.FunctionName.XFEqualsIgnoreCase("GetCubesList") Then
+					
+					Dim sql As String = $"SELECT distinct Name FROM dbo.Cube Order by Name asc"
+							Dim sCubeList As String = ""
+							
+							Dim AppName = Brapi.Dashboards.Parameters.GetLiteralParameterValue(si,False,"prm_LoadFCPData_app_list_selected")
+							Dim newSeshInfo As SessionInfo = BRApi.Security.Authorization.CreateSessionInfoForAnotherApp(si, appName.TrimStart(), openAppResult.Success)
+								
+							Using dbConn As DbConnInfo = BRApi.Database.CreateApplicationDbConnInfo(newSeshInfo)
+								Dim dt As DataTable = BRApi.Database.ExecuteSql(dbConn, sql, False)
+								For Each dr As DataRow In dt.Rows 
+									sCubeList += dr("Name") & ","
+								Next
+							End Using
+							'BRAPi.ErrorLog.LogMessage(si, $"{sWFProfileList}")
+							Return sCubeList
+
+				End If
+				
+				
+				Return Nothing
+			Catch ex As Exception
+				Throw ErrorHandler.LogWrite(si, New XFException(si, ex))
+			End Try
+		End Function
+	End Class
+End Namespace
+
+
+
+	]]></sourceCode>
+            </businessRule>
+        </businessRules>
+        <maintenanceUnits>
+            <maintenanceUnit name="ENT_Refresh_Metadata_To_FCP" description="" uiPlatformType="WpfOrSilverlight" accessGroup="Everyone" maintenanceGroup="Everyone">
+                <fileResources />
+                <stringResources />
+                <parameters>
+                    <parameter name="param_app_last_run_by_user" description="" userPrompt="" parameterType="LiteralValue" sortOrder="0">
+                        <defaultValue>vn51b1z</defaultValue>
+                        <resultFormatStringType>Default</resultFormatStringType>
+                        <resultCustomFormatString></resultCustomFormatString>
+                        <parameterCommandType>Unknown</parameterCommandType>
+                        <sqlQuery></sqlQuery>
+                        <dbLocation>Application</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>Unknown</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName></resultsTableName>
+                        <displayMember></displayMember>
+                        <valueMember></valueMember>
+                        <displayItems></displayItems>
+                        <valueItems></valueItems>
+                        <cubeName></cubeName>
+                        <dimType></dimType>
+                        <dimName></dimName>
+                        <memberFilter></memberFilter>
+                    </parameter>
+                    <parameter name="param_app_last_run_time" description="" userPrompt="" parameterType="LiteralValue" sortOrder="0">
+                        <defaultValue>3/4/2022 8:54:51 PM</defaultValue>
+                        <resultFormatStringType>Default</resultFormatStringType>
+                        <resultCustomFormatString></resultCustomFormatString>
+                        <parameterCommandType>Unknown</parameterCommandType>
+                        <sqlQuery></sqlQuery>
+                        <dbLocation>Application</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>Unknown</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName></resultsTableName>
+                        <displayMember></displayMember>
+                        <valueMember></valueMember>
+                        <displayItems></displayItems>
+                        <valueItems></valueItems>
+                        <cubeName></cubeName>
+                        <dimType></dimType>
+                        <dimName></dimName>
+                        <memberFilter></memberFilter>
+                    </parameter>
+                    <parameter name="param_dim_list_selected" description="" userPrompt="" parameterType="LiteralValue" sortOrder="0">
+                        <defaultValue>Entity</defaultValue>
+                        <resultFormatStringType>Default</resultFormatStringType>
+                        <resultCustomFormatString></resultCustomFormatString>
+                        <parameterCommandType>Unknown</parameterCommandType>
+                        <sqlQuery></sqlQuery>
+                        <dbLocation>Application</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>Unknown</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName></resultsTableName>
+                        <displayMember></displayMember>
+                        <valueMember></valueMember>
+                        <displayItems></displayItems>
+                        <valueItems></valueItems>
+                        <cubeName></cubeName>
+                        <dimType></dimType>
+                        <dimName></dimName>
+                        <memberFilter></memberFilter>
+                    </parameter>
+                    <parameter name="param_dim_list_send_to_fcp" description="" userPrompt="" parameterType="DelimitedList" sortOrder="0">
+                        <defaultValue></defaultValue>
+                        <resultFormatStringType>Default</resultFormatStringType>
+                        <resultCustomFormatString></resultCustomFormatString>
+                        <parameterCommandType>Method</parameterCommandType>
+                        <sqlQuery></sqlQuery>
+                        <dbLocation>Application</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>BusinessRule</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName></resultsTableName>
+                        <displayMember></displayMember>
+                        <valueMember></valueMember>
+                        <displayItems>BRString(DimensionApplication, GetDimensionList)</displayItems>
+                        <valueItems></valueItems>
+                        <cubeName></cubeName>
+                        <dimType></dimType>
+                        <dimName></dimName>
+                        <memberFilter></memberFilter>
+                    </parameter>
+                    <parameter name="param_app_list_send_to_fcp" description="" userPrompt="" parameterType="DelimitedList" sortOrder="0">
+                        <defaultValue></defaultValue>
+                        <resultFormatStringType>Default</resultFormatStringType>
+                        <resultCustomFormatString></resultCustomFormatString>
+                        <parameterCommandType>Method</parameterCommandType>
+                        <sqlQuery></sqlQuery>
+                        <dbLocation>Application</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>BusinessRule</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName></resultsTableName>
+                        <displayMember></displayMember>
+                        <valueMember></valueMember>
+                        <displayItems>BRString(DimensionApplication, GetApplicationList)</displayItems>
+                        <valueItems></valueItems>
+                        <cubeName></cubeName>
+                        <dimType></dimType>
+                        <dimName></dimName>
+                        <memberFilter></memberFilter>
+                    </parameter>
+                    <parameter name="param_app_list_selected" description="" userPrompt="" parameterType="LiteralValue" sortOrder="0">
+                        <defaultValue>Enterprise_Test</defaultValue>
+                        <resultFormatStringType>Default</resultFormatStringType>
+                        <resultCustomFormatString></resultCustomFormatString>
+                        <parameterCommandType>Unknown</parameterCommandType>
+                        <sqlQuery></sqlQuery>
+                        <dbLocation>Application</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>Unknown</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName></resultsTableName>
+                        <displayMember></displayMember>
+                        <valueMember></valueMember>
+                        <displayItems></displayItems>
+                        <valueItems></valueItems>
+                        <cubeName></cubeName>
+                        <dimType></dimType>
+                        <dimName></dimName>
+                        <memberFilter></memberFilter>
+                    </parameter>
+                </parameters>
+                <adapters>
+                    <adapter name="da_DB_FCP_FETCH_APPNAME_FROM_GLOBAL_TABLE" description="" commandType="SQL">
+                        <cubeViewName></cubeViewName>
+                        <dataTablePerCubeViewRow>true</dataTablePerCubeViewRow>
+                        <sqlQuery>Select ParmValue FROM XFT_Global_Parameters Where Module = 'DimensionData' AND AppName = 'Walmart Dev' AND ParmName ='AppNames'
+</sqlQuery>
+                        <dbLocation>Application</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>Unknown</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName></resultsTableName>
+                        <DashboardAdapterOptions>
+                            <CubeViewDataTableOptions>
+                                <IncludeTitle>false</IncludeTitle>
+                                <IncludeHeaderLeftLabel1>false</IncludeHeaderLeftLabel1>
+                                <IncludeHeaderLeftLabel2>false</IncludeHeaderLeftLabel2>
+                                <IncludeHeaderLeftLabel3>false</IncludeHeaderLeftLabel3>
+                                <IncludeHeaderLeftLabel4>false</IncludeHeaderLeftLabel4>
+                                <IncludeHeaderCenterLabel1>false</IncludeHeaderCenterLabel1>
+                                <IncludeHeaderCenterLabel2>false</IncludeHeaderCenterLabel2>
+                                <IncludeHeaderCenterLabel3>false</IncludeHeaderCenterLabel3>
+                                <IncludeHeaderCenterLabel4>false</IncludeHeaderCenterLabel4>
+                                <IncludeHeaderRightLabel1>false</IncludeHeaderRightLabel1>
+                                <IncludeHeaderRightLabel2>false</IncludeHeaderRightLabel2>
+                                <IncludeHeaderRightLabel3>false</IncludeHeaderRightLabel3>
+                                <IncludeHeaderRightLabel4>false</IncludeHeaderRightLabel4>
+                                <IncludePovCube>true</IncludePovCube>
+                                <IncludePovEntity>true</IncludePovEntity>
+                                <IncludePovParent>false</IncludePovParent>
+                                <IncludePovCons>false</IncludePovCons>
+                                <IncludePovScenario>true</IncludePovScenario>
+                                <IncludePovTime>true</IncludePovTime>
+                                <IncludePovView>true</IncludePovView>
+                                <IncludePovAccount>false</IncludePovAccount>
+                                <IncludePovFlow>false</IncludePovFlow>
+                                <IncludePovOrigin>false</IncludePovOrigin>
+                                <IncludePovIC>false</IncludePovIC>
+                                <IncludePovUD1>false</IncludePovUD1>
+                                <IncludePovUD2>false</IncludePovUD2>
+                                <IncludePovUD3>false</IncludePovUD3>
+                                <IncludePovUD4>false</IncludePovUD4>
+                                <IncludePovUD5>false</IncludePovUD5>
+                                <IncludePovUD6>false</IncludePovUD6>
+                                <IncludePovUD7>false</IncludePovUD7>
+                                <IncludePovUD8>false</IncludePovUD8>
+                                <IncludeMemberDetails>false</IncludeMemberDetails>
+                                <IncludeRowNavigationLink>false</IncludeRowNavigationLink>
+                                <IncludeHasDataStatus>true</IncludeHasDataStatus>
+                                <IncludeAnnotation>false</IncludeAnnotation>
+                                <IncludeAssumptions>false</IncludeAssumptions>
+                                <IncludeAuditComment>false</IncludeAuditComment>
+                                <IncludeFootnote>false</IncludeFootnote>
+                                <IncludeVarianceExplanation>false</IncludeVarianceExplanation>
+                            </CubeViewDataTableOptions>
+                            <CubeViewMDDataTableOptions>
+                                <AddStartEndCalendarTime>false</AddStartEndCalendarTime>
+                                <EntityTextType>3000</EntityTextType>
+                                <ConsolidationTextType>3000</ConsolidationTextType>
+                                <ScenarioTextType>3000</ScenarioTextType>
+                                <TimeTextType>3000</TimeTextType>
+                                <ViewTextType>3000</ViewTextType>
+                                <AccountTextType>3000</AccountTextType>
+                                <FlowTextType>3000</FlowTextType>
+                                <OriginTextType>3000</OriginTextType>
+                                <IcTextType>3000</IcTextType>
+                                <Ud1TextType>3000</Ud1TextType>
+                                <Ud2TextType>3000</Ud2TextType>
+                                <Ud3TextType>3000</Ud3TextType>
+                                <Ud4TextType>3000</Ud4TextType>
+                                <Ud5TextType>3000</Ud5TextType>
+                                <Ud6TextType>3000</Ud6TextType>
+                                <Ud7TextType>3000</Ud7TextType>
+                                <Ud8TextType>3000</Ud8TextType>
+                                <DimensionType1>-1</DimensionType1>
+                                <MemberFilter1 />
+                                <DimensionType2>-1</DimensionType2>
+                                <MemberFilter2 />
+                                <DimensionLevel>Unknown</DimensionLevel>
+                            </CubeViewMDDataTableOptions>
+                            <BiBlendDataTableOptions>
+                                <TableInfo />
+                                <GroupBy />
+                                <DataFieldAggregationTypes />
+                                <WhereClause />
+                            </BiBlendDataTableOptions>
+                        </DashboardAdapterOptions>
+                    </adapter>
+                    <adapter name="da_DB_FCP_PUT_ENT_ES_TaskActivity_DMJOB_Dimension_Data" description="" commandType="SQL">
+                        <cubeViewName></cubeViewName>
+                        <dataTablePerCubeViewRow>true</dataTablePerCubeViewRow>
+                        <sqlQuery>SELECT TOP 1
+
+(CASE WHEN [TaskActivityType] = 1000 THEN 'Data Mgmt'
+END) AS 'TaskType' 
+
+,(CASE 
+WHEN TaskActivityStatus = -1 THEN 'Unknown'
+WHEN TaskActivityStatus = 0 THEN 'Queued'
+WHEN TaskActivityStatus = 1000 THEN 'Running'
+WHEN TaskActivityStatus = 2000 THEN 'Canceled-By-User'
+WHEN TaskActivityStatus = 3000 THEN 'Canceled-By-Adm'
+WHEN TaskActivityStatus = 4000 THEN 'Canceled-By-Sys'
+WHEN TaskActivityStatus = 5000 THEN 'Failed'
+WHEN TaskActivityStatus = 6000 THEN 'Completed'
+WHEN TaskActivityStatus = 99999 THEN 'Imported Item'
+ELSE 'Unknown' 
+END) AS 'TaskStatus' 
+
+      ,[Description]
+      ,[StartTime]
+      ,[EndTime]
+      ,[LastActivityTime]
+
+FROM TaskActivity
+
+WHERE 
+ [TaskActivityType] = '1000' 
+AND Description = 'Send_Dimension_To_FCP' 
+AND TaskActivityStatus  = '6000'
+
+ORDER BY
+LastActivityTime Desc
+
+</sqlQuery>
+                        <dbLocation>Framework</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>Unknown</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName>TaskActivity</resultsTableName>
+                        <DashboardAdapterOptions>
+                            <CubeViewDataTableOptions>
+                                <IncludeTitle>false</IncludeTitle>
+                                <IncludeHeaderLeftLabel1>false</IncludeHeaderLeftLabel1>
+                                <IncludeHeaderLeftLabel2>false</IncludeHeaderLeftLabel2>
+                                <IncludeHeaderLeftLabel3>false</IncludeHeaderLeftLabel3>
+                                <IncludeHeaderLeftLabel4>false</IncludeHeaderLeftLabel4>
+                                <IncludeHeaderCenterLabel1>false</IncludeHeaderCenterLabel1>
+                                <IncludeHeaderCenterLabel2>false</IncludeHeaderCenterLabel2>
+                                <IncludeHeaderCenterLabel3>false</IncludeHeaderCenterLabel3>
+                                <IncludeHeaderCenterLabel4>false</IncludeHeaderCenterLabel4>
+                                <IncludeHeaderRightLabel1>false</IncludeHeaderRightLabel1>
+                                <IncludeHeaderRightLabel2>false</IncludeHeaderRightLabel2>
+                                <IncludeHeaderRightLabel3>false</IncludeHeaderRightLabel3>
+                                <IncludeHeaderRightLabel4>false</IncludeHeaderRightLabel4>
+                                <IncludePovCube>true</IncludePovCube>
+                                <IncludePovEntity>true</IncludePovEntity>
+                                <IncludePovParent>false</IncludePovParent>
+                                <IncludePovCons>false</IncludePovCons>
+                                <IncludePovScenario>true</IncludePovScenario>
+                                <IncludePovTime>true</IncludePovTime>
+                                <IncludePovView>true</IncludePovView>
+                                <IncludePovAccount>false</IncludePovAccount>
+                                <IncludePovFlow>false</IncludePovFlow>
+                                <IncludePovOrigin>false</IncludePovOrigin>
+                                <IncludePovIC>false</IncludePovIC>
+                                <IncludePovUD1>false</IncludePovUD1>
+                                <IncludePovUD2>false</IncludePovUD2>
+                                <IncludePovUD3>false</IncludePovUD3>
+                                <IncludePovUD4>false</IncludePovUD4>
+                                <IncludePovUD5>false</IncludePovUD5>
+                                <IncludePovUD6>false</IncludePovUD6>
+                                <IncludePovUD7>false</IncludePovUD7>
+                                <IncludePovUD8>false</IncludePovUD8>
+                                <IncludeMemberDetails>false</IncludeMemberDetails>
+                                <IncludeRowNavigationLink>false</IncludeRowNavigationLink>
+                                <IncludeHasDataStatus>true</IncludeHasDataStatus>
+                                <IncludeAnnotation>false</IncludeAnnotation>
+                                <IncludeAssumptions>false</IncludeAssumptions>
+                                <IncludeAuditComment>false</IncludeAuditComment>
+                                <IncludeFootnote>false</IncludeFootnote>
+                                <IncludeVarianceExplanation>false</IncludeVarianceExplanation>
+                            </CubeViewDataTableOptions>
+                            <CubeViewMDDataTableOptions>
+                                <AddStartEndCalendarTime>false</AddStartEndCalendarTime>
+                                <EntityTextType>3000</EntityTextType>
+                                <ConsolidationTextType>3000</ConsolidationTextType>
+                                <ScenarioTextType>3000</ScenarioTextType>
+                                <TimeTextType>3000</TimeTextType>
+                                <ViewTextType>3000</ViewTextType>
+                                <AccountTextType>3000</AccountTextType>
+                                <FlowTextType>3000</FlowTextType>
+                                <OriginTextType>3000</OriginTextType>
+                                <IcTextType>3000</IcTextType>
+                                <Ud1TextType>3000</Ud1TextType>
+                                <Ud2TextType>3000</Ud2TextType>
+                                <Ud3TextType>3000</Ud3TextType>
+                                <Ud4TextType>3000</Ud4TextType>
+                                <Ud5TextType>3000</Ud5TextType>
+                                <Ud6TextType>3000</Ud6TextType>
+                                <Ud7TextType>3000</Ud7TextType>
+                                <Ud8TextType>3000</Ud8TextType>
+                                <DimensionType1>-1</DimensionType1>
+                                <MemberFilter1 />
+                                <DimensionType2>-1</DimensionType2>
+                                <MemberFilter2 />
+                                <DimensionLevel>Unknown</DimensionLevel>
+                            </CubeViewMDDataTableOptions>
+                            <BiBlendDataTableOptions>
+                                <TableInfo />
+                                <GroupBy />
+                                <DataFieldAggregationTypes />
+                                <WhereClause />
+                            </BiBlendDataTableOptions>
+                        </DashboardAdapterOptions>
+                    </adapter>
+                    <adapter name="da_Db_FCP_PUT_ENT_ES_USERNAME" description="" commandType="SQL">
+                        <cubeViewName></cubeViewName>
+                        <dataTablePerCubeViewRow>true</dataTablePerCubeViewRow>
+                        <sqlQuery>SELECT TOP 1
+
+(CASE WHEN [TaskActivityType] = 1000 THEN 'Data Mgmt'
+END) AS 'TaskType' 
+
+,(CASE 
+WHEN TaskActivityStatus = -1 THEN 'Unknown'
+WHEN TaskActivityStatus = 0 THEN 'Queued'
+WHEN TaskActivityStatus = 1000 THEN 'Running'
+WHEN TaskActivityStatus = 2000 THEN 'Canceled-By-User'
+WHEN TaskActivityStatus = 3000 THEN 'Canceled-By-Adm'
+WHEN TaskActivityStatus = 4000 THEN 'Canceled-By-Sys'
+WHEN TaskActivityStatus = 5000 THEN 'Failed'
+WHEN TaskActivityStatus = 6000 THEN 'Completed'
+WHEN TaskActivityStatus = 99999 THEN 'Imported Item'
+ELSE 'Unknown' 
+END) AS 'TaskStatus' 
+
+      ,*
+
+FROM TaskActivity
+
+WHERE 
+ [TaskActivityType] = '1000' 
+AND Description = 'Send_Dimension_To_FCP' 
+AND TaskActivityStatus  = '6000'
+
+ORDER BY
+LastActivityTime Desc
+
+</sqlQuery>
+                        <dbLocation>Application</dbLocation>
+                        <externalDBConnName></externalDBConnName>
+                        <methodType>Unknown</methodType>
+                        <methodQuery></methodQuery>
+                        <resultsTableName></resultsTableName>
+                        <DashboardAdapterOptions>
+                            <CubeViewDataTableOptions>
+                                <IncludeTitle>false</IncludeTitle>
+                                <IncludeHeaderLeftLabel1>false</IncludeHeaderLeftLabel1>
+                                <IncludeHeaderLeftLabel2>false</IncludeHeaderLeftLabel2>
+                                <IncludeHeaderLeftLabel3>false</IncludeHeaderLeftLabel3>
+                                <IncludeHeaderLeftLabel4>false</IncludeHeaderLeftLabel4>
+                                <IncludeHeaderCenterLabel1>false</IncludeHeaderCenterLabel1>
+                                <IncludeHeaderCenterLabel2>false</IncludeHeaderCenterLabel2>
+                                <IncludeHeaderCenterLabel3>false</IncludeHeaderCenterLabel3>
+                                <IncludeHeaderCenterLabel4>false</IncludeHeaderCenterLabel4>
+                                <IncludeHeaderRightLabel1>false</IncludeHeaderRightLabel1>
+                                <IncludeHeaderRightLabel2>false</IncludeHeaderRightLabel2>
+                                <IncludeHeaderRightLabel3>false</IncludeHeaderRightLabel3>
+                                <IncludeHeaderRightLabel4>false</IncludeHeaderRightLabel4>
+                                <IncludePovCube>true</IncludePovCube>
+                                <IncludePovEntity>true</IncludePovEntity>
+                                <IncludePovParent>false</IncludePovParent>
+                                <IncludePovCons>false</IncludePovCons>
+                                <IncludePovScenario>true</IncludePovScenario>
+                                <IncludePovTime>true</IncludePovTime>
+                                <IncludePovView>true</IncludePovView>
+                                <IncludePovAccount>false</IncludePovAccount>
+                                <IncludePovFlow>false</IncludePovFlow>
+                                <IncludePovOrigin>false</IncludePovOrigin>
+                                <IncludePovIC>false</IncludePovIC>
+                                <IncludePovUD1>false</IncludePovUD1>
+                                <IncludePovUD2>false</IncludePovUD2>
+                                <IncludePovUD3>false</IncludePovUD3>
+                                <IncludePovUD4>false</IncludePovUD4>
+                                <IncludePovUD5>false</IncludePovUD5>
+                                <IncludePovUD6>false</IncludePovUD6>
+                                <IncludePovUD7>false</IncludePovUD7>
+                                <IncludePovUD8>false</IncludePovUD8>
+                                <IncludeMemberDetails>false</IncludeMemberDetails>
+                                <IncludeRowNavigationLink>false</IncludeRowNavigationLink>
+                                <IncludeHasDataStatus>true</IncludeHasDataStatus>
+                                <IncludeAnnotation>false</IncludeAnnotation>
+                                <IncludeAssumptions>false</IncludeAssumptions>
+                                <IncludeAuditComment>false</IncludeAuditComment>
+                                <IncludeFootnote>false</IncludeFootnote>
+                                <IncludeVarianceExplanation>false</IncludeVarianceExplanation>
+                            </CubeViewDataTableOptions>
+                            <CubeViewMDDataTableOptions>
+                                <AddStartEndCalendarTime>false</AddStartEndCalendarTime>
+                                <EntityTextType>3000</EntityTextType>
+                                <ConsolidationTextType>3000</ConsolidationTextType>
+                                <ScenarioTextType>3000</ScenarioTextType>
+                                <TimeTextType>3000</TimeTextType>
+                                <ViewTextType>3000</ViewTextType>
+                                <AccountTextType>3000</AccountTextType>
+                                <FlowTextType>3000</FlowTextType>
+                                <OriginTextType>3000</OriginTextType>
+                                <IcTextType>3000</IcTextType>
+                                <Ud1TextType>3000</Ud1TextType>
+                                <Ud2TextType>3000</Ud2TextType>
+                                <Ud3TextType>3000</Ud3TextType>
+                                <Ud4TextType>3000</Ud4TextType>
+                                <Ud5TextType>3000</Ud5TextType>
+                                <Ud6TextType>3000</Ud6TextType>
+                                <Ud7TextType>3000</Ud7TextType>
+                                <Ud8TextType>3000</Ud8TextType>
+                                <DimensionType1>-1</DimensionType1>
+                                <MemberFilter1 />
+                                <DimensionType2>-1</DimensionType2>
+                                <MemberFilter2 />
+                                <DimensionLevel>Unknown</DimensionLevel>
+                            </CubeViewMDDataTableOptions>
+                            <BiBlendDataTableOptions>
+                                <TableInfo />
+                                <GroupBy />
+                                <DataFieldAggregationTypes />
+                                <WhereClause />
+                            </BiBlendDataTableOptions>
+                        </DashboardAdapterOptions>
+                    </adapter>
+                </adapters>
+                <components>
+                    <component name="1_lbl_Export" description="" xfText="Export" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelBold = True, LabelFontSize = 16</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_lbl_Dimension_Header_Dimension_Name" description="" xfText="Select Dimension" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelFontSize = 16, MarginLeft = 20</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_lbl_Dimension_Header_Space" description="" xfText="" toolTip="" componentType="Label">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_lbl_Dimension_Header_Space_Copy" description="" xfText="" toolTip="" componentType="Label">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_lbl_Dimension_Header_Space_Copy (2)" description="" xfText="" toolTip="" componentType="Label">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_lbl_Dimension_Header_Space_Copy (3)" description="" xfText="" toolTip="" componentType="Label">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_lbl_Dimension_Header_Space_Copy (3)_Copy" description="" xfText="" toolTip="" componentType="Label">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_lbl_Dimension_Header_Text" description="" xfText="Dimensions Metadata Send To FCP" toolTip="" componentType="Label">
+                        <displayFormat>LabelBold = True, LabelFontSize = 28, LabelTextColor = DodgerBlue, VerticalAlignment = Center</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_lbl_Dimension_Select_Applicatioon" description="" xfText="Select Application" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelFontSize = 16, MarginLeft = 20</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="1A_logo_Dimension_Header_Walmart" description="" xfText="" toolTip="" componentType="Logo">
+                        <displayFormat>Height = 55, HorizontalAlignment = Left, HorizontalContentAlignment = Left, MarginBottom = 2, MarginLeft = 10, MarginTop = 15, VerticalAlignment = Top, Width = 250</displayFormat>
+                        <adapterMembers />
+                    </component>
+                    <component name="1lbl_Export_Button" description="" xfText="Export Data" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelBold = False, LabelFontSize = 16, MarginLeft = 20, UseTextWrapping = True</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="btn_Exportdata" description="" xfText="" toolTip="" componentType="Button" boundParameterName="" paramValueForButtonClick="" applyParamValueToCurrentDbrd="true" selectionChangedSaveType="NoAction" selectionChangedPovActionType="NoAction" selectionChangedTaskType="ExecuteDataManagementSequence" selectionChangedUIActionType="NoAction" selectionChangedNavigationType="NoAction">
+                        <displayFormat>BackgroundColor = Transparent, Bold = True, BorderColor = Transparent, BorderThickness = 0, FontSize = 20, Height = 50, HorizontalAlignment = Center, ImageStretch = Uniform, LabelBold = True, LabelFontSize = 10, LabelPosition = None, LabelTextColor = #FF000000, MarginLeft = 10, MarginRight = -10, VerticalAlignment = Center, Width = 50</displayFormat>
+                        <selectionChangedTaskArgs>{Refresh_Metadata_To_FCP}{param_app_list_selected=[|!param_app_list_selected!|],param_dim_list_selected=[|!param_dim_list_selected!|],export =true}</selectionChangedTaskArgs>
+                        <componentDefinition>
+                            <XFButtonDefinition ButtonType="Standard">
+                                <ImageFileSourceType>DashboardFile</ImageFileSourceType>
+                                <ImageUrlOrFullFileName>Img_FX_Rate_Load_Rate</ImageUrlOrFullFileName>
+                                <PageNumber />
+                                <ExcelSheet />
+                                <ExcelNamedRange />
+                            </XFButtonDefinition>
+                        </componentDefinition>
+                        <adapterMembers />
+                    </component>
+                    <component name="btn_Refresh_Metadata" description="" xfText="" toolTip="Refresh Metadata" componentType="Button" boundParameterName="" paramValueForButtonClick="" applyParamValueToCurrentDbrd="true" selectionChangedSaveType="NoAction" selectionChangedPovActionType="NoAction" selectionChangedTaskType="ExecuteDataManagementSequence" selectionChangedUIActionType="NoAction" selectionChangedNavigationType="NoAction">
+                        <displayFormat>BackgroundColor = Transparent, Bold = True, BorderColor = Transparent, BorderThickness = 0, FontSize = 20, Height = 50, HorizontalAlignment = Center, ImageStretch = Uniform, LabelBold = True, LabelFontSize = 10, LabelPosition = None, LabelTextColor = #FF000000, MarginLeft = 10, MarginRight = -10, VerticalAlignment = Center, Width = 50</displayFormat>
+                        <selectionChangedTaskArgs>{Refresh_Metadata_To_FCP}{param_app_list_selected=[|!param_app_list_selected!|],param_dim_list_selected=[|!param_dim_list_selected!|],export =false}</selectionChangedTaskArgs>
+                        <componentDefinition>
+                            <XFButtonDefinition ButtonType="Standard">
+                                <ImageFileSourceType>DashboardFile</ImageFileSourceType>
+                                <ImageUrlOrFullFileName>Img_FX_Rate_Load_Rate</ImageUrlOrFullFileName>
+                                <PageNumber />
+                                <ExcelSheet />
+                                <ExcelNamedRange />
+                            </XFButtonDefinition>
+                        </componentDefinition>
+                        <adapterMembers />
+                    </component>
+                    <component name="chkApplicationSelection" description="" xfText="" toolTip="" componentType="CheckBox" boundParameterName="" applyParamValueToCurrentDbrd="true" selectionChangedSaveType="NoAction" selectionChangedPovActionType="NoAction" selectionChangedTaskType="NoTask" selectionChangedUIActionType="NoAction" selectionChangedNavigationType="NoAction">
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 0_Frame_Dimension Load Dashboard" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="0_Frame_Dimension Load Dashboard">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 0_Frame_Dimensions_By_Application" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="0_Frame_Dimensions_By_Application">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 1_Common_header_Admin_Dashboard_Metadata" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="1_Common_header_Admin_Dashboard_Metadata">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 1_Frame_Dimension_Header" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="1_Frame_Dimension_Header">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 1_Frame_Dimension_Header_Copy" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="1_Frame_Dimension_Header_Copy">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 1A_Frame_Dimension_Header" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="1A_Frame_Dimension_Header">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 2_Frame_Dimension_Content" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="2_Frame_Dimension_Content">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 2a_Frame_Dimension_Content_AppList" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="2a_Frame_Dimension_Content_AppList">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 2b_Dimention_Button_export" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="2b_Dimention_Button_export">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 2b_Frame_Dimension_Button" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="2b_Frame_Dimension_Button">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 2C_Footer_Description" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="2C_Footer_Description">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 6B_Frame_Dimension_LastRun" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="6B_Frame_Dimension_LastRun">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded 6B_Frame_Dimension_LastRun_Copy" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="6B_Frame_Dimension_LastRun_Copy">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded ENS_Refresh_Data_To_FCP" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="ENS_Refresh_Data_To_FCP">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Embedded Frame_Dimension_Plan_Description" description="" xfText="" toolTip="" componentType="EmbeddedDashboard" embeddedDashboardName="Frame_Dimension_Plan_Description">
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="lbl_Common_Header_Admin_Metadata" description="Dimensions Metdata Send to FCP" xfText="Dimensions Metadata Send To FCP" toolTip="" componentType="Label">
+                        <displayFormat>LabelBold = True, LabelFontSize = 20</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="lbl_Dimension_AppNames" description="" xfText=" |!param_app_last_run_by_user!|    @" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelFontSize = 16</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers>
+                            <adapterMember name="da_DB_FCP_FETCH_APPNAME_FROM_GLOBAL_TABLE" />
+                        </adapterMembers>
+                    </component>
+                    <component name="lbl_Dimension_LastRunText" description="" xfText="Last Run:" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelFontSize = 16, MarginLeft = 20</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="lbl_Dimension_LastRunTime" description="" xfText="|!param_app_last_run_time!|" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelFontSize = 16, MarginLeft = 20</displayFormat>
+                        <componentDefinition>
+                            <XFLabelDefinition>
+                                <CellDefinitions>
+                                    <CellDefinition DataRowSelectionType="FirstRow" KeyColumnName="" KeyColumnValueOrRowIndex="" ResultColumnName="" NumberFormat="" />
+                                </CellDefinitions>
+                            </XFLabelDefinition>
+                        </componentDefinition>
+                        <adapterMembers>
+                            <adapterMember name="da_DB_FCP_PUT_ENT_ES_TaskActivity_DMJOB_Dimension_Data" />
+                        </adapterMembers>
+                    </component>
+                    <component name="lbl_Dimension_Load_Rates_Text" description="" xfText="Submit" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelBold = True, LabelFontSize = 16</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="lbl_Dimension_Metadata_Button_Text_Prefix" description="" xfText="Refresh Metadata To FCP:" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelBold = False, LabelFontSize = 16, MarginLeft = 20, UseTextWrapping = True</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="lbl_Dimensions_AppNames_Selected" description="" xfText="Selected Apps:" toolTip="" componentType="Label">
+                        <displayFormat>HorizontalAlignment = Left, LabelFontSize = 16, MarginLeft = 20, MarginBottom = 10</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="lbl_Execute" description="" xfText="Refresh Metadata" toolTip="" componentType="Label">
+                        <displayFormat>LabelFontSize = 16, MarginLeft = 20</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="lbl_Footer_Desc" description="" xfText="*To refresh metadata please select applications from left checkbox list and click &quot;Refresh Metadata&quot; button. This will send metadata for all selected applications to FCP." toolTip="" componentType="Label">
+                        <displayFormat>MarginLeft = 2,LabelFontSize = 14</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="lbl_Footer_Description" description="" xfText="" toolTip="" componentType="Label">
+                        <displayFormat> MarginLeft = 20</displayFormat>
+                        <componentDefinition />
+                        <adapterMembers />
+                    </component>
+                    <component name="Logo_Common_Header_Admin_Metdata" description="" xfText="" toolTip="" componentType="Logo">
+                        <displayFormat>Height = 55, HorizontalAlignment = Left, ImageStretch = Uniform, MarginBottom = 2, MarginLeft = 10, MarginTop = 5, VerticalAlignment = Center, Width = 175</displayFormat>
+                        <adapterMembers />
+                    </component>
+                    <component name="lstBx_Applications" description="" xfText="" toolTip="" componentType="ListBox" boundParameterName="param_app_list_send_to_fcp" applyParamValueToCurrentDbrd="true" selectionChangedSaveType="NoAction" selectionChangedPovActionType="NoAction" selectionChangedTaskType="ExecuteDashboardExtenderBRStageServer" selectionChangedUIActionType="Refresh" selectionChangedNavigationType="NoAction">
+                        <displayFormat>FontSize = 16, IsMultiSelect = True, LabelPosition = Center, UseTextWrapping = False</displayFormat>
+                        <selectionChangedTaskArgs>{FCP_APP_Selection_Refresh_Metadata}{SetSelectedApps}{}</selectionChangedTaskArgs>
+                        <dashboardsToRedraw>2a_Frame_Dimension_Content_AppList</dashboardsToRedraw>
+                        <adapterMembers />
+                    </component>
+                    <component name="lstBx_Dimension" description="" xfText="" toolTip="" componentType="ListBox" boundParameterName="param_dim_list_send_to_fcp" applyParamValueToCurrentDbrd="true" selectionChangedSaveType="NoAction" selectionChangedPovActionType="NoAction" selectionChangedTaskType="ExecuteDashboardExtenderBRStageServer" selectionChangedUIActionType="Refresh" selectionChangedNavigationType="NoAction">
+                        <displayFormat>FontSize = 16, IsMultiSelect = True, LabelPosition = Center, UseTextWrapping = False</displayFormat>
+                        <selectionChangedTaskArgs>{FCP_APP_Selection_Refresh_Metadata}{SetSelectedDims}{}</selectionChangedTaskArgs>
+                        <dashboardsToRedraw>2a_Frame_Dimension_Content_AppList</dashboardsToRedraw>
+                        <adapterMembers />
+                    </component>
+                    <component name="txtBx_selected_apps" description="" xfText="" toolTip="" componentType="TextBox" boundParameterName="param_app_list_selected" applyParamValueToCurrentDbrd="true" selectionChangedSaveType="NoAction" selectionChangedPovActionType="NoAction" selectionChangedTaskType="NoTask" selectionChangedUIActionType="NoAction" selectionChangedNavigationType="NoAction">
+                        <displayFormat>FontSize = 16, HorizontalAlignment = Left, MarginLeft = 20, Width = 500</displayFormat>
+                        <componentDefinition>
+                            <XFTextBoxDefinition>
+                                <Multiline>true</Multiline>
+                            </XFTextBoxDefinition>
+                        </componentDefinition>
+                        <adapterMembers />
+                    </component>
+                </components>
+                <dashboardGroups>
+                    <dashboardGroup name="ENS_Refresh_Data_To_FCP" description="" accessGroup="Everyone">
+                        <dashboards>
+                            <dashboard name="ENS_Refresh_Data_To_FCP" description="ENS - Refresh Metadata To FCP" pageCaption="" layoutType="Uniform" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <componentMembers>
+                                    <componentMember name="Embedded 0_Frame_Dimensions_By_Application" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                        </dashboards>
+                    </dashboardGroup>
+                    <dashboardGroup name="Solution_Content_Dimension_Data" description="" accessGroup="Everyone">
+                        <dashboards>
+                            <dashboard name="0_Frame_Dimensions_By_Application" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="50" />
+                                            <RowDefinition RowType="Line" Height="*" />
+                                            <RowDefinition RowType="Component" Height="*" />
+                                            <RowDefinition RowType="Component" Height="50" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="Embedded 1_Common_header_Admin_Dashboard_Metadata" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="Embedded 2_Frame_Dimension_Content" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="Embedded 2C_Footer_Description" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="1_Common_header_Admin_Dashboard_Metadata" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <displayFormat>BorderThickness = 0</displayFormat>
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="400" />
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="*" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="Logo_Common_Header_Admin_Metdata" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lbl_Common_Header_Admin_Metadata" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="1_Frame_Dimension_Header_Copy" description="" pageCaption="" layoutType="Uniform" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <componentMembers>
+                                    <componentMember name="Embedded 1A_Frame_Dimension_Header" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="2_Frame_Dimension_Content" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <displayFormat> BorderMarginTop = 5</displayFormat>
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="20" />
+                                            <ColumnDefinition ColumnType="Component" Width="200" />
+                                            <ColumnDefinition ColumnType="Component" Width="50" />
+                                            <ColumnDefinition ColumnType="Component" Width="200" />
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="30" />
+                                            <RowDefinition RowType="Component" Height="450" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="1A_lbl_Dimension_Header_Space" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Select_Applicatioon" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Header_Space_Copy (2)" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Header_Dimension_Name" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Header_Space_Copy (3)" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Header_Space_Copy (3)_Copy" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lstBx_Applications" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Header_Space_Copy" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lstBx_Dimension" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="Embedded 2a_Frame_Dimension_Content_AppList" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="2a_Frame_Dimension_Content_AppList" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <displayFormat>BorderMarginBottom = 20, BorderMarginTop = 10</displayFormat>
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="50" />
+                                            <RowDefinition RowType="Line" Height="*" />
+                                            <RowDefinition RowType="Component" Height="50" />
+                                            <RowDefinition RowType="Component" Height="30" />
+                                            <RowDefinition RowType="Component" Height="30" />
+                                            <RowDefinition RowType="Component" Height="100" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="Embedded 2b_Frame_Dimension_Button" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="Embedded 2b_Dimention_Button_export" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="Embedded 6B_Frame_Dimension_LastRun_Copy" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Header_Space" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="2b_Dimention_Button_export" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="250" />
+                                            <ColumnDefinition ColumnType="Component" Width="100" />
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="*" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="1lbl_Export_Button" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="btn_Exportdata" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1_lbl_Export" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="2b_Frame_Dimension_Button" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="250" />
+                                            <ColumnDefinition ColumnType="Component" Width="100" />
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="*" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="lbl_Dimension_Metadata_Button_Text_Prefix" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="btn_Refresh_Metadata" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lbl_Dimension_Load_Rates_Text" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="2C_Footer_Description" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="50" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="lbl_Footer_Desc" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="6B_Frame_Dimension_LastRun_Copy" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="275" />
+                                            <ColumnDefinition ColumnType="Component" Width="100" />
+                                            <ColumnDefinition ColumnType="Component" Width="200" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="*" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="lbl_Dimension_LastRunText" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lbl_Dimension_AppNames" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lbl_Dimension_LastRunTime" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                        </dashboards>
+                    </dashboardGroup>
+                    <dashboardGroup name="Solution_Content_Dimension_Data_Original" description="" accessGroup="Everyone">
+                        <dashboards>
+                            <dashboard name="0_Frame_Dimension Load Dashboard" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="100" />
+                                            <RowDefinition RowType="Line" Height="100" />
+                                            <RowDefinition RowType="Component" Height="300" />
+                                            <RowDefinition RowType="Line" Height="100" />
+                                            <RowDefinition RowType="Component" Height="100" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="Embedded 1A_Frame_Dimension_Header" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="Embedded 6B_Frame_Dimension_LastRun" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="Embedded Frame_Dimension_Plan_Description" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="1_Frame_Dimension_Header" description="" pageCaption="" layoutType="Uniform" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <componentMembers>
+                                    <componentMember name="Embedded 1A_Frame_Dimension_Header" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="1A_Frame_Dimension_Header" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="300" />
+                                            <ColumnDefinition ColumnType="Component" Width="125" />
+                                            <ColumnDefinition ColumnType="Component" Width="500" />
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="75" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="1A_logo_Dimension_Header_Walmart" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Header_Space" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="1A_lbl_Dimension_Header_Text" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="6B_Frame_Dimension_LastRun" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="180" />
+                                            <ColumnDefinition ColumnType="Component" Width="395" />
+                                            <ColumnDefinition ColumnType="Component" Width="100" />
+                                            <ColumnDefinition ColumnType="Component" Width="200" />
+                                            <ColumnDefinition ColumnType="Component" Width="150" />
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="*" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="lbl_Dimension_LastRunText" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lbl_Dimension_LastRunTime" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="btn_Refresh_Metadata" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lbl_Dimension_Load_Rates_Text" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lbl_Dimension_AppNames" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                            <dashboard name="Frame_Dimension_Plan_Description" description="" pageCaption="" layoutType="Grid" isInitiallyVisible="true" loadDashboardTaskType="NoTask">
+                                <DashboardDefinition>
+                                    <ShowTitle>true</ShowTitle>
+                                    <GridLayoutDefinition>
+                                        <ColumnDefinitions>
+                                            <ColumnDefinition ColumnType="Component" Width="200" />
+                                            <ColumnDefinition ColumnType="Component" Width="*" />
+                                        </ColumnDefinitions>
+                                        <RowDefinitions>
+                                            <RowDefinition RowType="Component" Height="*" />
+                                        </RowDefinitions>
+                                    </GridLayoutDefinition>
+                                </DashboardDefinition>
+                                <componentMembers>
+                                    <componentMember name="lbl_Dimension_Metadata_Button_Text_Prefix" left="" top="" width="" height="" dockPosition="Left" />
+                                    <componentMember name="lbl_Dimension_AppNames" left="" top="" width="" height="" dockPosition="Left" />
+                                </componentMembers>
+                            </dashboard>
+                        </dashboards>
+                    </dashboardGroup>
+                </dashboardGroups>
+            </maintenanceUnit>
+        </maintenanceUnits>
+    </applicationDashboardsRoot>
+</OneStreamXF>
